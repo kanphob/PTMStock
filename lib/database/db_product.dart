@@ -36,13 +36,13 @@ class DatabaseHelper {
     Directory documentDirectory = await getApplicationDocumentsDirectory();
     String path = join(documentDirectory.path, "db_product.db");
 
-    var ourDb = await openDatabase(path, version: 1, onCreate: _onCreate);
+    var ourDb = await openDatabase(path, version: 2, onCreate: _onCreate);
     return ourDb;
   }
 
   void _onCreate(Database db, int newVersion) async {
     await db.execute(
-        "CREATE TABLE product(id INTEGER PRIMARY KEY, barcode TEXT, date TEXT, time TEXT, name TEXT, group TEXT, image TEXT, username TEXT,)");
+        "CREATE TABLE $tbProduct(id INTEGER PRIMARY KEY, barcode TEXT, date TEXT, time TEXT, name TEXT, prodgroup TEXT, image TEXT, username TEXT)");
   }
 
   //CRUD - CREATE, READ, UPDATE, DELETE
@@ -54,19 +54,43 @@ class DatabaseHelper {
     return res;
   }
 
-  Future<List<Map>> getAllProduct() async {
+  Future<List<Map>> getAllProduct(String sDate, int index) async {
     var dbClient = await db;
-    var result = await dbClient.query(tbProduct);
+    String sWhere = 'date' + ' =?';
+    List<String> sArgs = [sDate];
+    var result = await dbClient.query(tbProduct,
+        where: sWhere,
+        whereArgs: sArgs,
+        orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC',
+        limit: 6,
+        offset: index);
 
     return result.toList();
   }
 
-  Future<List<Map>> getProductByBarcode(String sBarcode) async {
+  Future<List<Map>> getAllProductLimitTen(String sDate, int index) async {
     var dbClient = await db;
-    String sWhere = 'barcode' + ' =?';
-    List<String> sArg = [sBarcode];
+    String sWhere = 'date' + ' =?';
+    List<String> sArgs = [sDate];
+    var result = await dbClient.query(tbProduct, where: sWhere,
+        whereArgs: sArgs,
+        orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC',
+        limit: 6,
+        offset: index);
+
+    return result.toList();
+  }
+
+  Future<List<Map>> getProductByBarcode(String sDate, String sBarcode) async {
+    var dbClient = await db;
+    String sWhere = 'date' + ' =?' + ' AND ' + 'barcode' + " LIKE '" +
+        sBarcode +
+        "%'";
+    List<String> sArg = [sDate];
     var result =
-        await dbClient.query(tbProduct, where: sWhere, whereArgs: sArg);
+    await dbClient.query(tbProduct, where: sWhere,
+        whereArgs: sArg,
+        orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC');
 
     return result.toList();
   }
@@ -87,12 +111,23 @@ class DatabaseHelper {
         await dbClient.rawQuery("SELECT COUNT(*) FROM $tbProduct"));
   }
 
-//  Future<int> deleteUser(int id) async {
-//    var dbClient = await db;
+  Future<int> deleteProductByBarcode(String sBarcode) async {
+    var dbClient = await db;
+    String sWhere = 'barcode' + ' =?';
+    List<String> sArgs = [sBarcode];
+    int iRet = await dbClient
+        .delete(tbProduct, where: sWhere, whereArgs: sArgs);
+    return iRet;
+  }
 
-//    return await dbClient
-//        .delete(tableUser, where: "$columnId = ?", whereArgs: [id]);
-//  }
+  Future<int> deleteProductAllByDate(String sDate) async {
+    var dbClient = await db;
+    String sWhere = 'date' + ' =?';
+    List<String> sArgs = [sDate];
+    int iRet = await dbClient
+        .delete(tbProduct, where: sWhere, whereArgs: sArgs);
+    return iRet;
+  }
 
 //  Future<int> updateUser(User user) async {
 //    var dbClient = await db;

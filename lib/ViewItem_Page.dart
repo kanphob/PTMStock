@@ -81,7 +81,8 @@ class _ViewItemPageState extends State<ViewItemPage> {
     int iRet = 0;
     // สำหรับดึงข้อมูล firebase
     DatabaseHelper db = DatabaseHelper();
-    List<Map> lm = await db.getProductByBarcode(this.widget.sBarcode);
+    List<Map> lm = await db.getProductByBarcode(
+        dtStartDate.toString().substring(0, 10), this.widget.sBarcode);
     iRet = lm.length;
     for (int i = 0; i < iRet; i++) {
       Map map = lm[i];
@@ -105,6 +106,7 @@ class _ViewItemPageState extends State<ViewItemPage> {
       widget.sBarcode = sBarcode;
       sThaiMonths = sThaiMonth;
       sNames = sName;
+      sCodes = sBarcode;
       sGroups = sGroup;
       sUserName = sUsername;
       sImgBase64 = sImg64;

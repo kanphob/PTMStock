@@ -89,10 +89,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool isProcess = false;
 
-  waitProcess() async {
+  waitProcess(int index) async {
     if (!isProcess) {
       isProcess = true;
-//      await setDataListViewScrolling();
+      await setDataListViewScrolling(index);
       isProcess = false;
 //      if(isLoading){
 //        isLoading = false;
@@ -116,13 +116,30 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ' ' +
         dtStartDate.year.toString();
     dateStart_controller = TextEditingController(text: sThaiMonth);
-    setDataListViewFirstTime();
+    setDataListViewFirstTime(0);
     super.initState();
   }
 
-  deleteFromDB(String sDocID) async {}
+  deleteFromDB(String sBarcode) async {
+    DatabaseHelper db = DatabaseHelper();
+    int iRet = await db.deleteProductByBarcode(sBarcode);
+    if (iRet > 0) {
+      Navigator.pop(context);
+      setDataListViewFirstTime(0);
+    }
+  }
 
-  setDataListViewFirstTime() async {
+  deleteAllByDate() async {
+    DatabaseHelper db = DatabaseHelper();
+    int iRet = await db
+        .deleteProductAllByDate(dtStartDate.toString().substring(0, 10));
+    if (iRet > 0) {
+      Navigator.pop(context);
+      setDataListViewFirstTime(0);
+    }
+  }
+
+  setDataListViewFirstTime(int index) async {
     isDownloading = true;
     sFullDate = currentDt.day.toString() +
         " " +
@@ -133,7 +150,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     mdProduct.clear();
 
     DatabaseHelper db = new DatabaseHelper();
-    List<Map> lm = await db.getAllProduct();
+    List<Map> lm =
+        await db.getAllProduct(dtStartDate.toString().substring(0, 10), index);
     int iRet = lm.length;
     for (int i = 0; i < lm.length; i++) {
       Map map = lm[i];
@@ -173,27 +191,96 @@ class _AddProductScreenState extends State<AddProductScreen> {
         sImg64: sImg64,
         sUsername: sUsername,
       ));
+      mdProduct[i].sImage = itemImage;
     }
     if (iRet == 0) {
-      isDownloading = false;
+
       sListData = "ไม่มีรายการ";
       bNoMoreData = true;
       setState(() {});
     }
+    isDownloading = false;
     if (iRet > 0) {
-      isDownloading = false;
 //        Navigator.pop(context);
       setState(() {});
     }
+
   }
 
-  getDataBySearch(String sSeachName) async {
+  setDataListViewScrolling(int index) async {
+    isDownloading = false;
+    sFullDate = currentDt.day.toString() +
+        " " +
+        getMonthName(currentDt.month) +
+        " " +
+        (currentDt.year).toString();
+
+
+    DatabaseHelper db = new DatabaseHelper();
+    List<Map> lm = await db.getAllProductLimitTen(
+        dtStartDate.toString().substring(0, 10), index);
+    int iRet = lm.length;
+    if (iRet > 0) {
+      for (int i = 0; i < lm.length; i++) {
+        Map map = lm[i];
+        String sBarcode = map['barcode'];
+        String sDate = map['date'];
+        String sTime = map['time'];
+        String sName = map['name'];
+        String sGroup = map['group'];
+        String sImg64 = map['image'];
+        String sUsername = map['username'];
+
+        DateTime dtDocDate = DateTime.parse(sDate);
+        String sThaiMonth =
+//            dtDocDate.day.toString() +
+//            ' ' +
+//            getMonthName(dtDocDate.month) +
+//            ' ' +
+//            dtDocDate.year.toString() +
+//            ' ' +
+        sTime;
+        String dateFormat = datetimeFormat.format(DateTime(dtDocDate.year,
+            dtDocDate.month, dtDocDate.day, dtDocDate.hour, dtDocDate.minute));
+        Image itemImage = ImagesConverter.imageFromBase64String(sImg64);
+        if (sBarcode == null) sBarcode = '';
+        if (sThaiMonth == null) sThaiMonth = '';
+        if (sTime == null) sTime = '';
+        if (sName == null) sName = '';
+        if (sGroup == null) sGroup = '';
+        if (sImg64 == null) sImg64 = '';
+        if (sUsername == null) sUsername = '';
+        mdProduct.add(ModelProduct(
+          sBarcode,
+          sDate: sThaiMonth,
+          sTime: sTime,
+          sName: sName,
+          sGroup: sGroup,
+          sImg64: sImg64,
+          sUsername: sUsername,
+        ));
+        mdProduct[i].sImage = itemImage;
+      }
+    }
+
+    if (iRet > 0) {
+      isDownloading = true;
+//        Navigator.pop(context);
+      setState(() {});
+    } else {
+      isDownloading = true;
+      sListData = "ไม่มีรายการ";
+      bNoMoreData = true;
+    }
+  }
+
+  getDataBySearch(String sSearchName) async {
     isDownloading = true;
-    // สำหรับดึงข้อมูล firebase
     mdProduct.clear();
 
     DatabaseHelper db = new DatabaseHelper();
-    List<Map> lm = await db.getAllProduct();
+    List<Map> lm = await db.getProductByBarcode(
+        dtStartDate.toString().substring(0, 10), sSearchName);
     int iRet = lm.length;
     for (int i = 0; i < lm.length; i++) {
       Map map = lm[i];
@@ -226,12 +313,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
         sImg64: sImg64,
         sUsername: sUsername,
       ));
+      mdProduct[i].sImage = itemImage;
     }
 
     if (iRet == 0) {
       mdProduct.clear();
       sListData = "ไม่มีรายการ";
       bNoMoreData = true;
+      setState(() {
+
+      });
+    }
+
+    if (iRet > 0) {
+      isDownloading = false;
+//        Navigator.pop(context);
+      setState(() {});
     }
 //        Navigator.pop(context);
   }
@@ -248,30 +345,30 @@ class _AddProductScreenState extends State<AddProductScreen> {
         int iRet = 0;
         DatabaseHelper db = DatabaseHelper();
         List<Map> lm = await db.checkProductByBarcode(sBarcode);
-
+//
         iRet = lm.length;
-
-        if (iRet > 0) {
-          showDialog(
-              context: context,
-              builder: (_) {
-                return AlertDialog(
-                  title: Text("รหัสบาร์โค้ดซ้ำ..มีข้อมูลในระบบแล้ว"),
-                  actions: <Widget>[
-                    FlatButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.close,
-                          color: Colors.grey,
-                        ),
-                        label: Text(
-                          "ปิด",
-                          style: TextStyle(color: Colors.grey),
-                        ))
-                  ],
-                );
-              });
-        } else {
+//
+//        if (iRet > 0) {
+//          showDialog(
+//              context: context,
+//              builder: (_) {
+//                return AlertDialog(
+//                  title: Text("รหัสบาร์โค้ดซ้ำ..มีข้อมูลในระบบแล้ว"),
+//                  actions: <Widget>[
+//                    FlatButton.icon(
+//                        onPressed: () => Navigator.pop(context),
+//                        icon: Icon(
+//                          Icons.close,
+//                          color: Colors.grey,
+//                        ),
+//                        label: Text(
+//                          "ปิด",
+//                          style: TextStyle(color: Colors.grey),
+//                        ))
+//                  ],
+//                );
+//              });
+//        } else {
           String sDate = savedateFormat.format(DateTime.now());
           String sTime = timeFormat.format(DateTime.now());
 //      mdProduct.add(ModelProduct(sBarcode,sDate: sDate,sCode: sBarcode,sName: 'ไม่ระบุ',sGroup: 'ไม่ระบุ',sImg64: sBase64Img));
@@ -283,8 +380,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
               sImg64: sBase64Img,
               sUsername: sUsername));
 
-          if (iRet > 0) setDataListViewFirstTime();
-        }
+        if (iRet > 0) setDataListViewFirstTime(0);
+//        }
       }
     }
   }
@@ -292,9 +389,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   _imageTakePicture() async {
     var picture = await picker.getImage(
         source: ImageSource.camera,
-        imageQuality: 100,
-        maxHeight: 800,
-        maxWidth: 600);
+        imageQuality: 85,
+        maxWidth: 600
+    );
     ImageResize.Image imageFile =
         ImageResize.decodeJpg(File(picture.path).readAsBytesSync());
     ImageResize.Image thumbnail = ImageResize.copyResize(imageFile, width: 520);
@@ -342,7 +439,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     String sSearchName = searchBar_controller.text;
     if (search.length == 0) {
       sSearchName = "";
-      await setDataListViewFirstTime();
+      await setDataListViewFirstTime(0);
     } else {
       if (search == sSearchName) {
         await getDataBySearch(sSearchName);
@@ -511,7 +608,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                         ),
                                         onPressed: () {
                                           searchBar_controller.clear();
-                                          setDataListViewFirstTime();
+                                          setDataListViewFirstTime(0);
                                           setState(() {});
                                         },
                                       )
@@ -530,63 +627,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
         mdProduct.length > 0
             ? Expanded(
-                child: new CustomScrollView(
-                    shrinkWrap: true,
-                    physics: BouncingScrollPhysics(),
-                    slivers: <Widget>[
-                    new SliverGrid(
-                        gridDelegate:
-                            new SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, i) {
-                            final index = i;
+          child: new
 
-                            if (index >= mdProduct.length) {
-//                      if (!bNoMoreData) {
-                              isDownloading = true;
-                              waitProcess();
-
-//                      }
-                            }
-
-                            if (mdProduct.length > 0 &&
-                                index < mdProduct.length) {
-                              return _buildRow(mdProduct[index], index);
-                            }
-                          },
-                          childCount: mdProduct.length + 1,
-                        )),
-                    new SliverToBoxAdapter(
-                        child: mdProduct.length >= 8
-                            ? Container(
-                                margin: EdgeInsets.all(10),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : Container()),
-                  ])
-//                GridView.builder(
-//                  physics: BouncingScrollPhysics(),
-//                  itemCount: mdProduct.length + 1,
-//                  shrinkWrap: true,
-//                  gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
-//                      crossAxisCount: 2),
-//                  itemBuilder: (context, i) {
-//                    final index = i;
-//
-//                    if (index >= mdProduct.length) {
-////                      if (!bNoMoreData) {
-//                      waitProcess();
-////                      }
-//                    }
-//
-//                    if (mdProduct.length > 0 && index < mdProduct.length) {
-//                      return _buildRow(mdProduct[index], index);
-//                    }
-//                  },
-//                ),
+          GridView.builder(
+            physics: BouncingScrollPhysics(),
+            itemCount: mdProduct.length + 1,
+            shrinkWrap: true,
+            gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2),
+            itemBuilder: (context, i) {
+              final index = i;
+              if (index >= mdProduct.length) {
+                waitProcess(index);
+              }
+              if (mdProduct.length > 0 && index < mdProduct.length) {
+                return _buildRow(mdProduct[index], index);
+              }
+            },
+          ),
                 )
             : isDownloading
                 ? Container(
@@ -611,111 +669,158 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Container(
       margin: EdgeInsets.only(top: 5),
       color: Colors.grey.shade200,
-      child: Column(
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              GestureDetector(
-                child: Text(
-                  'เลือกวันที่',
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade700),
+        child: Row(children: <Widget>[
+          Expanded(
+            flex: 9,
+            child: Column(
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    GestureDetector(
+                      child: Text(
+                        'เลือกวันที่',
+                        style: TextStyle(
+                            fontSize: 15, color: Colors.grey.shade700),
+                      ),
+                      onTap: () {},
+                    ),
+                  ],
                 ),
-                onTap: () {},
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Expanded(
-                flex: 1,
-                child: Container(),
-              ),
-              Expanded(
-                flex: 5,
-                child: DateTimeField(
-                  readOnly: true,
-                  resetIcon: null,
-                  textAlign: TextAlign.center,
-                  controller: dateStart_controller,
-                  format: dateFormat,
-                  focusNode: focusSearch,
-                  style: TextStyle(color: Colors.blue, height: 1.4),
-                  onShowPicker: (context, currentValue) async {
-                    dtStartDate = DateTime(
-                        dtStartDate.year,
-                        dtStartDate.month,
-                        dtStartDate.day,
-                        dtStartDate.hour,
-                        dtStartDate.minute,
-                        dtStartDate.second);
-                    final date = await RoundedDatePicker.show(
-                      context,
-                      theme: ThemeData(primarySwatch: Colors.red),
-                      initialDate: DateTime(
-                          dtStartDate.year, dtStartDate.month, dtStartDate.day),
-                      locale: Locale("th", "TH"),
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime(2100),
-                    );
-                    if (date != null) {
-                      dtStartDate = date;
-                      String sThaiMonth = dtStartDate.day.toString() +
-                          ' ' +
-                          getMonthName(dtStartDate.month) +
-                          ' ' +
-                          dtStartDate.year.toString();
-                      dateStart_controller =
-                          TextEditingController(text: sThaiMonth);
-//                      setDataListViewFilterDate();
-                      setState(() {});
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 8,
+                      child: DateTimeField(
+                        readOnly: true,
+                        resetIcon: null,
+                        textAlign: TextAlign.center,
+                        controller: dateStart_controller,
+                        format: dateFormat,
+                        focusNode: focusSearch,
+                        style: TextStyle(color: Colors.blue, height: 1.4),
+                        onShowPicker: (context, currentValue) async {
+                          dtStartDate = DateTime(
+                              dtStartDate.year,
+                              dtStartDate.month,
+                              dtStartDate.day,
+                              dtStartDate.hour,
+                              dtStartDate.minute,
+                              dtStartDate.second);
+                          final date = await RoundedDatePicker.show(
+                            context,
+                            theme: ThemeData(primarySwatch: Colors.red),
+                            initialDate: DateTime(
+                                dtStartDate.year, dtStartDate.month,
+                                dtStartDate.day),
+                            locale: Locale("th", "TH"),
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) {
+                            dtStartDate = date;
+                            String sThaiMonth = dtStartDate.day.toString() +
+                                ' ' +
+                                getMonthName(dtStartDate.month) +
+                                ' ' +
+                                dtStartDate.year.toString();
+                            dateStart_controller =
+                                TextEditingController(text: sThaiMonth);
+                            setDataListViewFirstTime(0);
+                            setState(() {});
 
-                      return DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                      );
-                    } else {
-                      String sThaiMonth = dtStartDate.day.toString() +
-                          ' ' +
-                          getMonthName(dtStartDate.month) +
-                          ' ' +
-                          dtStartDate.year.toString();
-                      dateStart_controller =
-                          TextEditingController(text: sThaiMonth);
+                            return DateTime(
+                              date.year,
+                              date.month,
+                              date.day,
+                            );
+                          } else {
+                            String sThaiMonth = dtStartDate.day.toString() +
+                                ' ' +
+                                getMonthName(dtStartDate.month) +
+                                ' ' +
+                                dtStartDate.year.toString();
+                            dateStart_controller =
+                                TextEditingController(text: sThaiMonth);
 //                              return DateTime(
 //                                  dtStartDate.year,
 //                                  dtStartDate.month,
 //                                  dtStartDate.day,
 //                                  dtStartDate.hour,
 //                                  dtStartDate.minute);
-                      return null;
-                    }
-                  },
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    prefixIcon: Icon(
-                      Icons.calendar_today,
-                      color: Colors.blue,
-                      size: 15,
+                            return null;
+                          }
+                        },
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          prefixIcon: Icon(
+                            Icons.calendar_today,
+                            color: Colors.blue,
+                            size: 15,
+                          ),
+                          suffixIcon: Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.blue,
+                            size: 15,
+                          ),
+                        ),
+                      ),
                     ),
-                    suffixIcon: Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.blue,
-                      size: 15,
-                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+              flex: 2,
+              child: Column(children: <Widget>[
+                Container(
+                  child: IconButton(
+                    icon: Icon(Icons.delete_forever, color: Colors.red,),
+                    onPressed: () =>
+                        showDialog(
+                            context: context,
+                            builder: (_) {
+                              String sDate = dtStartDate.toString().substring(0,
+                                  10);
+                              return AlertDialog(
+                                shape: new RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                title: Text(
+                                    "ต้องการล้างรายการทั้งหมดของ $sDate หรือไม่?"),
+                                actions: <Widget>[
+                                  FlatButton.icon(
+                                      onPressed: () => Navigator.pop(context),
+                                      icon:
+                                      Icon(Icons.close, color: Colors.grey),
+                                      label: Text(
+                                        "ยกเลิก",
+                                        style: TextStyle(color: Colors.grey),
+                                      )),
+                                  FlatButton.icon(
+                                      onPressed: () async {
+                                        deleteAllByDate();
+                                      },
+                                      icon: Icon(Icons.delete_forever,
+                                          color: Colors.red),
+                                      label: Text(
+                                        "ล้างข้อมูล",
+                                        style: TextStyle(color: Colors.red),
+                                      )),
+                                ],
+                              );
+                            }),
                   ),
                 ),
-              ),
-              Expanded(
-                flex: 1,
-                child: Container(),
-              ),
-            ],
-          ),
-        ],
-      ),
+                Container(
+                  child: Text("ล้างข้อมูลวันที่เลือก",
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,),
+                )
+              ],)
+          )
+        ],)
     );
   }
 
@@ -744,7 +849,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               borderRadius: BorderRadius.only(
                                   topLeft: Radius.circular(5),
                                   topRight: Radius.circular(5)),
-//                                child: pair.imageList
+                                child: pair.sImage
                             ),
                           ),
                           tag: pair.sImg64,
@@ -809,7 +914,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                         style: TextStyle(color: Colors.grey),
                                       )),
                                   FlatButton.icon(
-                                      onPressed: () async {},
+                                      onPressed: () async {
+                                        deleteFromDB(pair.sBarcode);
+                                      },
                                       icon: Icon(Icons.delete_forever,
                                           color: Colors.red),
                                       label: Text(

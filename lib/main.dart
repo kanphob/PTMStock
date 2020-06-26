@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptmstock/AddProductScreen.dart';
 import 'package:ptmstock/database/db_product.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,6 +14,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
       title: 'Flutter Demo',
       theme: ThemeData(
         // This is the theme of your application.

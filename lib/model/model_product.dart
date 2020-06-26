@@ -7,6 +7,7 @@ class ModelProduct {
   String sBarcode;
   String sGroup;
   String sImg64;
+  Image sImage;
   String sUsername;
 
   ModelProduct(this.sBarcode,
@@ -23,7 +24,7 @@ class ModelProduct {
     map["date"] = sDate;
     map["time"] = sTime;
     map["name"] = sName;
-    map["group"] = sGroup;
+    map["prodgroup"] = sGroup;
     map["image"] = sImg64;
     map["username"] = sUsername;
 
@@ -41,6 +42,8 @@ class ModelProduct {
   String get getGroup => sGroup;
 
   String get getsImg64 => sImg64;
+
+  Image get getsImage => sImage;
 
   String get getsUsername => sUsername;
 
@@ -66,6 +69,10 @@ class ModelProduct {
 
   set setImg64(String sImg64) {
     this.sImg64 = sImg64;
+  }
+
+  set setImage(Image sImage) {
+    this.sImage = sImage;
   }
 
   set setUsername(String sUsername) {
