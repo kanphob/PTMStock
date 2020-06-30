@@ -336,7 +336,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   processCreateProduct() async {
     sBase64Img = '';
     sBarcode = '';
-
+    searchBar_controller.clear();
     String sBase64 = await _imageTakePicture();
     if (sBase64Img != null && sBase64Img != '') {
       await scan();
@@ -348,27 +348,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
 //
         iRet = lm.length;
 //
-//        if (iRet > 0) {
-//          showDialog(
-//              context: context,
-//              builder: (_) {
-//                return AlertDialog(
-//                  title: Text("รหัสบาร์โค้ดซ้ำ..มีข้อมูลในระบบแล้ว"),
-//                  actions: <Widget>[
-//                    FlatButton.icon(
-//                        onPressed: () => Navigator.pop(context),
-//                        icon: Icon(
-//                          Icons.close,
-//                          color: Colors.grey,
-//                        ),
-//                        label: Text(
-//                          "ปิด",
-//                          style: TextStyle(color: Colors.grey),
-//                        ))
-//                  ],
-//                );
-//              });
-//        } else {
+        if (iRet > 0) {
+          showDialog(
+              context: context,
+              builder: (_) {
+                return AlertDialog(
+                  title: Text("รหัสบาร์โค้ดซ้ำ..มีข้อมูลในระบบแล้ว"),
+                  actions: <Widget>[
+                    FlatButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: Icon(
+                          Icons.close,
+                          color: Colors.grey,
+                        ),
+                        label: Text(
+                          "ปิด",
+                          style: TextStyle(color: Colors.grey),
+                        ))
+                  ],
+                );
+              });
+        } else {
           String sDate = savedateFormat.format(DateTime.now());
           String sTime = timeFormat.format(DateTime.now());
 //      mdProduct.add(ModelProduct(sBarcode,sDate: sDate,sCode: sBarcode,sName: 'ไม่ระบุ',sGroup: 'ไม่ระบุ',sImg64: sBase64Img));
@@ -380,8 +380,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
               sImg64: sBase64Img,
               sUsername: sUsername));
 
-        if (iRet > 0) setDataListViewFirstTime(0);
-//        }
+          if (iRet > 0) setDataListViewFirstTime(0);
+        }
       }
     }
   }
@@ -525,105 +525,110 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(color: Colors.grey.shade200),
-                padding: EdgeInsets.all(5),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.all(5),
-                            color: Colors.grey.shade300,
-                            child: RichText(
-                              text: TextSpan(children: [
-                                TextSpan(
-                                  text: 'ชื่อผู้ใช้งาน : ',
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                TextSpan(
-                                  text: sUsername,
-                                  style: TextStyle(
-                                    color: Colors.deepOrangeAccent,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+        SingleChildScrollView(
+          physics: BouncingScrollPhysics(),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(color: Colors.grey.shade200),
+                  padding: EdgeInsets.all(5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Container(
+                              padding: EdgeInsets.all(5),
+                              color: Colors.grey.shade300,
+                              child: RichText(
+                                text: TextSpan(children: [
+                                  TextSpan(
+                                    text: 'ชื่อผู้ใช้งาน : ',
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                              ]),
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                    buildPickDate(),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          flex: 8,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.red),
-                              borderRadius: BorderRadius.circular(5),
-                              color: Colors.grey.shade100,
-                            ),
-                            alignment: Alignment.center,
-                            child: TextField(
-                              keyboardType: TextInputType.text,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (term) {
-                                searchData(searchBar_controller.text);
-                              },
-                              autofocus: false,
-                              onChanged: searchData,
-                              controller: searchBar_controller,
-                              decoration: InputDecoration(
-                                hintText: 'ค้นหาด้วยบาร์โค้ด',
-                                prefixIcon: GestureDetector(
-                                  child: Icon(
-                                    Icons.search,
-                                    color: Colors.grey.shade700,
+                                  TextSpan(
+                                    text: sUsername,
+                                    style: TextStyle(
+                                      color: Colors.deepOrangeAccent,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  onTap: () {
-                                    searchData(searchBar_controller.text);
-                                  },
+                                ]),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                      buildPickDate(),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            flex: 8,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.red),
+                                borderRadius: BorderRadius.circular(5),
+                                color: Colors.grey.shade100,
+                              ),
+                              alignment: Alignment.center,
+                              child: TextField(
+                                keyboardType: TextInputType.text,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (term) {
+                                  searchData(searchBar_controller.text);
+                                },
+                                autofocus: false,
+                                onChanged: searchData,
+                                controller: searchBar_controller,
+                                decoration: InputDecoration(
+                                  hintText: 'ค้นหาด้วยบาร์โค้ด',
+                                  prefixIcon: GestureDetector(
+                                    child: Icon(
+                                      Icons.search,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                    onTap: () {
+                                      searchData(searchBar_controller.text);
+                                    },
+                                  ),
+                                  hintStyle: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 13),
+                                  border: InputBorder.none,
+                                  suffixIcon: searchBar_controller.text.length >
+                                      0
+                                      ? IconButton(
+                                    icon: Icon(
+                                      Icons.close,
+                                      size: 15,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                    onPressed: () {
+                                      searchBar_controller.clear();
+                                      setDataListViewFirstTime(0);
+                                      setState(() {});
+                                    },
+                                  )
+                                      : null,
                                 ),
-                                hintStyle: TextStyle(
-                                    color: Colors.grey.shade700, fontSize: 13),
-                                border: InputBorder.none,
-                                suffixIcon: searchBar_controller.text.length > 0
-                                    ? IconButton(
-                                        icon: Icon(
-                                          Icons.close,
-                                          size: 15,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                        onPressed: () {
-                                          searchBar_controller.clear();
-                                          setDataListViewFirstTime(0);
-                                          setState(() {});
-                                        },
-                                      )
-                                    : null,
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         mdProduct.length > 0
             ? Expanded(
@@ -631,15 +636,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
           GridView.builder(
             physics: BouncingScrollPhysics(),
-            itemCount: mdProduct.length + 1,
+            itemCount: mdProduct.length + 2,
             shrinkWrap: true,
             gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2),
             itemBuilder: (context, i) {
               final index = i;
-              if (index >= mdProduct.length) {
-                waitProcess(index);
-              }
+//              if (index >= mdProduct.length) {
+//                waitProcess(index);
+//              }
               if (mdProduct.length > 0 && index < mdProduct.length) {
                 return _buildRow(mdProduct[index], index);
               }

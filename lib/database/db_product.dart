@@ -58,12 +58,12 @@ class DatabaseHelper {
     var dbClient = await db;
     String sWhere = 'date' + ' =?';
     List<String> sArgs = [sDate];
-    var result = await dbClient.query(tbProduct,
-        where: sWhere,
-        whereArgs: sArgs,
-        orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC',
-        limit: 6,
-        offset: index);
+    var result = await dbClient.query(
+      tbProduct,
+      where: sWhere,
+      whereArgs: sArgs,
+      orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC',
+    );
 
     return result.toList();
   }
@@ -75,7 +75,7 @@ class DatabaseHelper {
     var result = await dbClient.query(tbProduct, where: sWhere,
         whereArgs: sArgs,
         orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC',
-        limit: 6,
+        limit: 10,
         offset: index);
 
     return result.toList();
@@ -83,13 +83,12 @@ class DatabaseHelper {
 
   Future<List<Map>> getProductByBarcode(String sDate, String sBarcode) async {
     var dbClient = await db;
-    String sWhere = 'date' + ' =?' + ' AND ' + 'barcode' + " LIKE '" +
+    String sWhere = 'barcode' + " LIKE '" +
         sBarcode +
         "%'";
     List<String> sArg = [sDate];
     var result =
     await dbClient.query(tbProduct, where: sWhere,
-        whereArgs: sArg,
         orderBy: 'date' + ' DESC' + ', ' + 'time' + ' DESC');
 
     return result.toList();
