@@ -67,6 +67,7 @@ class _HomePageState extends State<HomePage> {
     return SafeArea(
       child: Scaffold(
         body: Container(
+          height: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.red[500], Colors.red[100]],
@@ -142,9 +143,9 @@ class _HomePageState extends State<HomePage> {
                                             decoration: new InputDecoration(
                                                 labelText: "ชื่อผู้ใช้งาน*",
                                                 errorStyle:
-                                                    TextStyle(fontSize: 10),
+                                                TextStyle(fontSize: 10),
                                                 hintStyle:
-                                                    TextStyle(fontSize: 12),
+                                                TextStyle(fontSize: 12),
                                                 icon: Image.asset(
                                                   "assets/images/user_icon3.png",
                                                   height: 40.0,
@@ -152,7 +153,7 @@ class _HomePageState extends State<HomePage> {
                                                   fit: BoxFit.scaleDown,
                                                 )),
                                             keyboardType:
-                                                TextInputType.emailAddress,
+                                            TextInputType.emailAddress,
                                             validator: (val) => val.length == 0
                                                 ? "กรุณาระบุชื่อผู้ใช้งาน."
                                                 : null,
@@ -195,8 +196,8 @@ class _HomePageState extends State<HomePage> {
                               context,
                               MaterialPageRoute(
                                   builder: (context) => AddProductScreen(
-                                        sUsername: usernameController.text,
-                                      )));
+                                    sUsername: usernameController.text,
+                                  )));
                         }
                       }),
                 ],

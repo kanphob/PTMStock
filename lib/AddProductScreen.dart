@@ -19,6 +19,7 @@ import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter_rounded_date_picker/rounded_date_picker.dart';
 import 'package:path/path.dart' as Path;
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter_exif_rotation/flutter_exif_rotation.dart';
 
 class AddProductScreen extends StatefulWidget {
   String sUsername;
@@ -55,6 +56,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool isDownloading = false;
   bool bNoMoreData = false;
   TextStyle _textStyleButton = TextStyle(color: Colors.blue, fontSize: 12);
+  bool bHideDateSelector = false;
 
   String getMonthName(final int month) {
     switch (month) {
@@ -115,9 +117,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
         getMonthName(dtStartDate.month) +
         ' ' +
         dtStartDate.year.toString();
+    focusSearch.addListener(_onFocusChange);
     dateStart_controller = TextEditingController(text: sThaiMonth);
     setDataListViewFirstTime(0);
     super.initState();
+  }
+
+  void _onFocusChange() {
+    if (focusSearch.hasFocus && searchBar_controller.text.isNotEmpty) {
+      bHideDateSelector = true;
+    } else {
+      bHideDateSelector = false;
+    }
+    setState(() {
+
+    });
   }
 
   deleteFromDB(String sBarcode) async {
@@ -194,12 +208,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
       mdProduct[i].sImage = itemImage;
     }
     if (iRet == 0) {
-
       sListData = "ไม่มีรายการ";
       bNoMoreData = true;
+      isDownloading = false;
       setState(() {});
     }
-    isDownloading = false;
+
     if (iRet > 0) {
 //        Navigator.pop(context);
       setState(() {});
@@ -331,6 +345,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       setState(() {});
     }
 //        Navigator.pop(context);
+    return iRet;
   }
 
   processCreateProduct() async {
@@ -387,15 +402,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   _imageTakePicture() async {
-    var picture = await picker.getImage(
+    var picture = await ImagePicker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85,
-        maxWidth: 600
+        imageQuality: 90,
+        maxWidth: MediaQuery
+            .of(context)
+            .size
+            .width
     );
+    picture = await FlutterExifRotation.rotateImage(path: picture.path);
+
+//Note : iOS not implemented
+
     ImageResize.Image imageFile =
-        ImageResize.decodeJpg(File(picture.path).readAsBytesSync());
-    ImageResize.Image thumbnail = ImageResize.copyResize(imageFile, width: 520);
-    sBase64Img = base64Encode(ImageResize.encodePng(thumbnail));
+    ImageResize.decodeJpg(File(picture.path).readAsBytesSync());
+//    ImageResize.Image thumbnail = ImageResize.copyResize(imageFile, width: MediaQuery.of(context).size.width.round());
+    sBase64Img = base64Encode(ImageResize.encodePng(imageFile));
 //    imageProduct = ImagesConverter.imageFromBase64String(sBase64Img);
     setState(() {});
     return sBase64Img;
@@ -434,6 +456,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   searchData(String search) async {
+    _onFocusChange();
     await Future.delayed(Duration(milliseconds: 700));
 
     String sSearchName = searchBar_controller.text;
@@ -442,7 +465,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       await setDataListViewFirstTime(0);
     } else {
       if (search == sSearchName) {
-        await getDataBySearch(sSearchName);
+        int iRet = await getDataBySearch(sSearchName);
+        if (iRet != null)
+          isDownloading = false;
       }
     }
   }
@@ -566,7 +591,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           )
                         ],
                       ),
-                      buildPickDate(),
+                      bHideDateSelector ? Container() : buildPickDate(),
                       Row(
                         children: <Widget>[
                           Expanded(
@@ -585,6 +610,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                   searchData(searchBar_controller.text);
                                 },
                                 autofocus: false,
+                                focusNode: focusSearch,
                                 onChanged: searchData,
                                 controller: searchBar_controller,
                                 decoration: InputDecoration(
@@ -703,7 +729,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         textAlign: TextAlign.center,
                         controller: dateStart_controller,
                         format: dateFormat,
-                        focusNode: focusSearch,
                         style: TextStyle(color: Colors.blue, height: 1.4),
                         onShowPicker: (context, currentValue) async {
                           dtStartDate = DateTime(
